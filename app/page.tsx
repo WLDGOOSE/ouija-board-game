@@ -546,6 +546,7 @@ useEffect(() => {
           
           {/* Ad Placeholder */}
           <AdPlaceholder />
+          
         </div>
         
         {/* Right Side - Chat Interface */}
