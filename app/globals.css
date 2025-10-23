@@ -1,26 +1,543 @@
-@import "tailwindcss";
-
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: #0a0a0a;
+  color: #e0e0e0;
+  overflow: hidden;
+  height: 100vh;
+}
+
+.container {
+  display: flex;
+  height: 100vh;
+  padding: 20px;
+  gap: 20px;
+}
+
+/* Ouija Board Styling */
+.board-container {
+  flex: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.board {
+  width: 600px;
+  height: 450px;
+  background-color: #1a1a1a;
+  border-radius: 10px;
+  box-shadow: 0 0 30px rgba(120, 0, 120, 0.3);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 2px solid #3a3a3a;
+}
+
+.board::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(circle at 50% 50%, rgba(80, 0, 80, 0.1) 0%, transparent 70%),
+    repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(60, 60, 60, 0.1) 2px, rgba(60, 60, 60, 0.1) 4px);
+  z-index: 1;
+}
+
+.board-title {
+  position: absolute;
+  top: 20px;
+  color: #e0e0e0;
+  font-size: 24px;
+  letter-spacing: 5px;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+  z-index: 2;
+}
+
+.letters-grid {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 15px;
+  width: 80%;
+  z-index: 2;
+  position: relative;
+}
+
+.letter {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  color: #e0e0e0;
+  background-color: rgba(40, 40, 40, 0.7);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  user-select: none;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+}
+
+.letter:hover {
+  background-color: rgba(80, 0, 80, 0.5);
+  transform: scale(1.1);
+}
+
+.yes-no {
+  display: flex;
+  justify-content: space-between;
+  width: 80%;
+  margin-top: 20px;
+  z-index: 2;
+  position: relative;
+}
+
+.yes, .no {
+  width: 80px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: #e0e0e0;
+  background-color: rgba(40, 40, 40, 0.7);
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  user-select: none;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+}
+
+.yes:hover, .no:hover {
+  background-color: rgba(80, 0, 80, 0.5);
+  transform: scale(1.1);
+}
+
+.goodbye {
+  position: absolute;
+  bottom: 20px;
+  width: 120px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  color: #e0e0e0;
+  background-color: rgba(40, 40, 40, 0.7);
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  user-select: none;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+  z-index: 2;
+}
+
+.goodbye:hover {
+  background-color: rgba(80, 0, 80, 0.5);
+  transform: scale(1.1);
+}
+
+/* Mystic Ring Styling */
+.mystic-ring {
+  position: absolute;
+  z-index: 10;
+  pointer-events: none;
+  filter: drop-shadow(0 0 10px rgba(199, 156, 78, 0.5));
+}
+
+/* Chat Interface Styling */
+.chat-container {
+  flex: 2;
+  display: flex;
+  flex-direction: column;
+  background-color: #1a1a1a;
+  border-radius: 10px;
+  box-shadow: 0 0 20px rgba(120, 0, 120, 0.2);
+  overflow: hidden;
+  border: 1px solid #3a3a3a;
+}
+
+.chat-header {
+  padding: 15px;
+  background-color: #2a0a2a;
+  text-align: center;
+  border-bottom: 1px solid #3a3a3a;
+}
+
+.chat-messages {
+  flex: 1;
+  padding: 15px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.message {
+  padding: 10px 15px;
+  border-radius: 10px;
+  max-width: 80%;
+  word-wrap: break-word;
+}
+
+.user-message {
+  align-self: flex-end;
+  background-color: #3a0a3a;
+  border: 1px solid #5a2a5a;
+}
+
+.spirit-message {
+  align-self: flex-start;
+  background-color: #1a2a1a;
+  border: 1px solid #3a5a3a;
+}
+
+.system-message {
+  align-self: center;
+  background-color: #2a2a0a;
+  border: 1px solid #5a5a2a;
+  font-style: italic;
+  text-align: center;
+  font-size: 0.9em;
+}
+
+.chat-input-container {
+  display: flex;
+  padding: 15px;
+  border-top: 1px solid #3a3a3a;
+  background-color: #2a0a2a;
+}
+
+.chat-input {
+  flex: 1;
+  padding: 10px 15px;
+  background-color: #1a1a1a;
+  border: 1px solid #5a2a5a;
+  border-radius: 20px;
+  color: #e0e0e0;
+  outline: none;
+}
+
+.send-button {
+  margin-left: 10px;
+  padding: 10px 20px;
+  background-color: #5a0a5a;
+  border: none;
+  border-radius: 20px;
+  color: #e0e0e0;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.send-button:hover {
+  background-color: #7a0a7a;
+}
+
+/* Mode Selection */
+.mode-selection {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(10, 10, 10, 0.9);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.mode-title {
+  font-size: 32px;
+  margin-bottom: 30px;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+}
+
+.mode-options {
+  display: flex;
+  gap: 30px;
+}
+
+.mode-option {
+  padding: 20px 40px;
+  background-color: #2a0a2a;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s;
+  text-align: center;
+  border: 1px solid #5a2a5a;
+}
+
+.mode-option:hover {
+  background-color: #5a0a5a;
+  transform: scale(1.05);
+}
+
+.hidden {
+  display: none;
+}
+
+/* Candle Effects */
+.candle {
+  position: absolute;
+  width: 20px;
+  height: 40px;
+  background: linear-gradient(to bottom, #8a5a30, #5a3a20);
+  border-radius: 5px 5px 0 0;
+  z-index: 1;
+}
+
+.candle::after {
+  content: '';
+  position: absolute;
+  top: -15px;
+  left: 5px;
+  width: 10px;
+  height: 20px;
+  background: radial-gradient(ellipse at center, #ffaa00, #ff5500 60%, transparent 70%);
+  border-radius: 50% 50% 20% 20%;
+  animation: flicker 3s infinite alternate;
+  box-shadow: 0 0 10px #ff5500, 0 0 20px #ff5500;
+}
+
+@keyframes flicker {
+  0%, 100% { transform: scale(1); opacity: 0.8; }
+  25% { transform: scale(1.1); opacity: 1; }
+  50% { transform: scale(0.9); opacity: 0.7; }
+  75% { transform: scale(1.05); opacity: 0.9; }
+}
+
+/* Floating particles */
+.particle {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  background-color: rgba(255, 255, 255, 0.5);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+@keyframes float {
+  0% { transform: translate(0, 0); opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { transform: translate(var(--tx, 0), var(--ty, 0)); opacity: 0; }
+}
+
+/* Mystic Ring Animations */
+@keyframes ringRotate {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes ringRotateReverse {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(-360deg);
+  }
+}
+
+@keyframes pulseCenter {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0.8;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1.5);
+    opacity: 1;
+  }
+}
+
+@keyframes runeGlow {
+  0%, 100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes energyPulse {
+  0% {
+    transform: rotate(0deg) scale(1);
+    opacity: 0.5;
+  }
+  50% {
+    transform: rotate(180deg) scale(1.1);
+    opacity: 0.8;
+  }
+  100% {
+    transform: rotate(360deg) scale(1);
+    opacity: 0.5;
+  }
+}
+
+@keyframes floatAway {
+  0% {
+    transform: rotate(var(--rotation, 0deg)) translate(35px) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: rotate(var(--rotation, 0deg)) translate(60px) scale(0);
+    opacity: 0;
+  }
+}
+
+@keyframes godOfWarPulse {
+  0% {
+    box-shadow: 
+      0 0 30px rgba(199, 156, 78, 0.3),
+      inset 0 0 20px rgba(0, 0, 0, 0.8),
+      0 4px 8px rgba(0, 0, 0, 0.6);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 
+      0 0 50px rgba(199, 156, 78, 0.6),
+      inset 0 0 25px rgba(0, 0, 0, 0.9),
+      0 6px 12px rgba(0, 0, 0, 0.8);
+    transform: scale(1.02);
+  }
+  100% {
+    box-shadow: 
+      0 0 30px rgba(199, 156, 78, 0.3),
+      inset 0 0 20px rgba(0, 0, 0, 0.8),
+      0 4px 8px rgba(0, 0, 0, 0.6);
+    transform: scale(1);
+  }
+}
+
+@keyframes runeGlowEffect {
+  0%, 100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+/* Mobile responsive styles */
+@media (max-width: 768px) {
+  .container {
+    flex-direction: column;
+    padding: 10px;
+    gap: 15px;
+  }
+  
+  .board {
+    width: 95%;
+    height: 300px;
+  }
+  
+  .letters-grid {
+    gap: 8px;
+  }
+  
+  .letter {
+    width: 25px;
+    height: 25px;
+    font-size: 14px;
+  }
+  
+  .yes, .no {
+    width: 60px;
+    height: 30px;
+    font-size: 14px;
+  }
+  
+  .goodbye {
+    width: 100px;
+    height: 30px;
+    font-size: 12px;
+  }
+  
+  /* Adjust mystic ring for mobile */
+  .mystic-ring {
+    transform: scale(0.8);
+  }
+  
+  /* Adjust spelling display for mobile */
+  .spelling-display {
+    font-size: 18px !important;
+    padding: 15px !important;
+    min-height: 60px !important;
+    margin: 10px 0 !important;
+  }
+  
+  .mode-options {
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  .mode-option {
+    padding: 15px 30px;
+  }
+}
+
+/* Responsive design for larger screens */
+@media (max-width: 1000px) {
+  .container {
+    flex-direction: column;
+  }
+  
+  .board {
+    width: 90%;
+    height: 350px;
+  }
+  
+  .letters-grid {
+    gap: 10px;
+  }
+  
+  .letter {
+    width: 30px;
+    height: 30px;
+    font-size: 16px;
+  }
+}
+
+/* Additional responsive adjustments */
+@media (max-width: 480px) {
+  .board {
+    height: 280px;
+  }
+  
+  .letters-grid {
+    gap: 5px;
+  }
+  
+  .letter {
+    width: 22px;
+    height: 22px;
+    font-size: 12px;
+  }
+  
+  .board-title {
+    font-size: 18px;
+  }
+  
+  .chat-container {
+    max-height: 300px;
+  }
 }
