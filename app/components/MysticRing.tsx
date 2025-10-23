@@ -1,6 +1,6 @@
 import { MysticRingProps } from './types'
 
-export default function MysticRing({ position, isActive }: MysticRingProps) {
+export default function MysticRing({ position, isActive, currentLetter }: MysticRingProps) {
   return (
     <div 
       className="mystic-ring"
@@ -16,6 +16,24 @@ export default function MysticRing({ position, isActive }: MysticRingProps) {
         pointerEvents: 'none'
       }}
     >
+      {/* Current Letter Display */}
+      {currentLetter && isActive && (
+        <div style={{
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          fontSize: '24px',
+          fontWeight: 'bold',
+          color: '#f8d78c',
+          textShadow: '0 0 10px #c8aa6e, 0 0 20px #c8aa6e',
+          zIndex: 20,
+          animation: 'letterPulse 0.5s infinite alternate'
+        }}>
+          {currentLetter}
+        </div>
+      )}
+      
       {/* Outer Ring */}
       <div style={{
         position: 'absolute',

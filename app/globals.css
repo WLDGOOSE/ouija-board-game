@@ -404,6 +404,18 @@ body {
   }
 }
 
+@keyframes letterPulse {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0.9;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1.2);
+    opacity: 1;
+    text-shadow: 0 0 15px #c8aa6e, 0 0 25px #c8aa6e;
+  }
+}
+
 @keyframes godOfWarPulse {
   0% {
     box-shadow: 

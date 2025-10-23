@@ -1,4 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import Pusher from 'pusher';
+
+export const runtime = 'nodejs';
 
 // Production-safe Pusher initialization
 function getPusher() {
@@ -6,13 +9,11 @@ function getPusher() {
     throw new Error('Pusher should only be used server-side');
   }
 
-  const Pusher = require('pusher');
-  
   return new Pusher({
-    appId: process.env.PUSHER_APP_ID,
-    key: process.env.NEXT_PUBLIC_PUSHER_KEY,
-    secret: process.env.PUSHER_SECRET,
-    cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER,
+    appId: process.env.PUSHER_APP_ID as string,
+    key: process.env.NEXT_PUBLIC_PUSHER_KEY as string,
+    secret: process.env.PUSHER_SECRET as string,
+    cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER as string,
     useTLS: true
   });
 }
@@ -42,7 +43,7 @@ export async function POST(req: NextRequest) {
     });
 
   } catch (error: any) {
-    console.error('Pusher error:', error.message);
+    console.error('Pusher error:', error?.message || error);
     
     return NextResponse.json(
       { 

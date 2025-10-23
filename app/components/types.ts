@@ -26,23 +26,6 @@ export interface ModeSelectionProps {
   onModeSelect: (mode: GameMode) => void;
 }
 
-export interface OuijaBoardProps {
-  gameMode: GameMode;
-  onMessage: (sender: string, text: string, type: Message['type']) => void;
-  messages: Message[];
-}
-
-export interface ChatInterfaceProps {
-  gameMode: GameMode;
-  messages: Message[];
-  onSendMessage: (sender: string, text: string, type: Message['type']) => void;
-}
-
-export interface PlanchetteProps {
-  position: Position;
-}
-
-// Add to existing types
 export interface BoardInteraction {
   type: 'letter' | 'yesno' | 'goodbye';
   value: string;
@@ -53,39 +36,11 @@ export interface OuijaBoardProps {
   onInteraction: (interaction: BoardInteraction) => void;
   planchettePosition: Position;
   messages: Message[];
-}
-
-export interface ChatInterfaceProps {
-  gameMode: GameMode;
-  messages: Message[];
-  onSendMessage: (sender: string, text: string, type: Message['type']) => void;
-  isTyping: boolean;
-}
-
-// Add to existing types in app/components/types.ts
-export interface OuijaBoardProps {
-  gameMode: GameMode;
-  onInteraction: (interaction: BoardInteraction) => void;
-  planchettePosition: Position;
-  messages: Message[];
   isSpelling?: boolean;
   currentSpelling?: string;
+  currentLetter?: string;
 }
 
-export interface PlanchetteProps {
-  position: Position;
-  isMoving?: boolean;
-}
-
-export interface ChatInterfaceProps {
-  gameMode: GameMode;
-  messages: Message[];
-  onSendMessage: (sender: string, text: string, type: Message['type']) => void;
-  isTyping: boolean;
-  isSpelling?: boolean;
-}
-
-// Add to existing types
 export interface ChatInterfaceProps {
   gameMode: GameMode;
   messages: Message[];
@@ -95,8 +50,13 @@ export interface ChatInterfaceProps {
   username?: string;
 }
 
-// Add to existing types
+export interface PlanchetteProps {
+  position: Position;
+  isMoving?: boolean;
+}
+
 export interface MysticRingProps {
   position: Position;
   isActive?: boolean;
+  currentLetter?: string;
 }

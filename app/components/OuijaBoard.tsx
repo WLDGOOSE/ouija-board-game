@@ -12,7 +12,8 @@ export default function OuijaBoard({
   planchettePosition, 
   messages,
   isSpelling,
-  currentSpelling 
+  currentSpelling,
+  currentLetter
 }: OuijaBoardProps) {
   const boardRef = useRef<HTMLDivElement>(null)
 
@@ -143,6 +144,7 @@ export default function OuijaBoard({
         <MysticRing 
           position={planchettePosition} 
           isActive={isSpelling}
+          currentLetter={currentLetter}
         />
         
         {/* Candles for atmosphere */}

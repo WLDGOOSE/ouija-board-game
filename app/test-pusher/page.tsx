@@ -2,16 +2,17 @@
 
 import { useState } from 'react';
 import { useRealTimeChat } from '@/hooks/useRealTimeChat';
+import { Message } from '@/app/components/types';
 
 export default function TestPusher() {
-  const [messages, setMessages] = useState<any[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [testRoomId, setTestRoomId] = useState('test-room');
   const [testUsername, setTestUsername] = useState('tester');
 
   const { isConnected, sendMessage } = useRealTimeChat({
     roomId: testRoomId,
     username: testUsername,
-    onNewMessage: (message) => {
+    onNewMessage: (message: Message) => {
       setMessages(prev => [...prev, message]);
     }
   });

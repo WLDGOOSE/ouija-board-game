@@ -6,12 +6,22 @@ let pusherClient: any = null;
 if (typeof window !== 'undefined') {
   try {
     const Pusher = require('pusher-js');
-    pusherClient = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY!, {
-      cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER!,
-      forceTLS: true
+    if (process.env.NODE_ENV !== 'production') {
+      try { Pusher.logToConsole = true; } catch {}
+    }
+    const _key = process.env.NEXT_PUBLIC_PUSHER_KEY!;
+    const _cluster = process.env.NEXT_PUBLIC_PUSHER_CLUSTER!;
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('[Pusher] init', { key: _key?.slice(0, 6) + '…', cluster: _cluster });
+    }
+    pusherClient = new Pusher(_key, {
+      cluster: _cluster,
+      forceTLS: true,
+      enabledTransports: ['ws', 'wss'],
+      disabledTransports: ['sockjs', 'xhr_streaming', 'xhr_polling']
     });
   } catch (error) {
-    console.warn('Pusher client failed to initialize, using fallback mode');
+    console.warn('Pusher client failed to initialize, using fallback mode', error);
   }
 }
 
@@ -45,8 +55,8 @@ export function useRealTimeChat({
 
       return response.ok;
     } catch (error) {
-      console.log('Message sent (fallback mode)');
-      return true; // Always succeed in fallback mode
+      console.error('Failed to send chat message:', error);
+      return false;
     }
   }, [roomId, username]);
 
@@ -66,7 +76,8 @@ export function useRealTimeChat({
 
       return response.ok;
     } catch (error) {
-      return true;
+      console.error('Failed to send board interaction:', error);
+      return false;
     }
   }, [roomId, username]);
 
@@ -74,7 +85,7 @@ export function useRealTimeChat({
     if (!roomId) return false;
 
     try {
-      const response = await fetch('/api/pusher', {
+      const res = await fetch('/api/pusher', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -84,9 +95,10 @@ export function useRealTimeChat({
         })
       });
 
-      return response.ok;
+      return res.ok;
     } catch (error) {
-      return true;
+      console.error('Failed to send spirit response:', error);
+      return false;
     }
   }, [roomId]);
 
@@ -94,7 +106,7 @@ export function useRealTimeChat({
   useEffect(() => {
     if (isFallbackMode) {
       console.log('Using fallback mode - real-time features limited');
-      setIsConnected(true); // Always "connected" in fallback
+      setIsConnected(false);
       return;
     }
 
@@ -143,8 +155,8 @@ export function useRealTimeChat({
       });
 
     } catch (error) {
-      console.warn('Pusher setup failed, using fallback');
-      setIsConnected(true);
+      console.warn('Pusher setup failed, using fallback', error);
+      setIsConnected(false);
     }
 
     return () => {
@@ -154,7 +166,7 @@ export function useRealTimeChat({
   }, [roomId, username, onNewMessage, onBoardInteraction, onUserJoined, onUserLeft, isFallbackMode]);
 
   return {
-    isConnected: isFallbackMode ? true : isConnected,
+    isConnected,
     sendMessage,
     sendBoardInteraction,
     sendSpiritResponse,

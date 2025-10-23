@@ -23,6 +23,7 @@ export default function Home() {
   const [useAIMode, setUseAIMode] = useState(false)
   const [isSpelling, setIsSpelling] = useState(false)
   const [currentSpelling, setCurrentSpelling] = useState<string>('')
+  const [currentLetter, setCurrentLetter] = useState<string>('')
   const [username, setUsername] = useState<string>('User' + Math.floor(Math.random() * 1000))
   const [friendUsername, setFriendUsername] = useState<string>('')
   const [showFriendInvite, setShowFriendInvite] = useState(false)
@@ -134,6 +135,26 @@ useEffect(() => {
   }
 }, [gameMode, roomId, username, isConnected]);
 
+// Automatically join friend session from URL ?room=...
+useEffect(() => {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const urlRoom = params.get('room');
+    if (urlRoom) {
+      const normalized = urlRoom.toUpperCase();
+      setRoomId(normalized);
+      setGameMode('friend');
+      setShowFriendInvite(true);
+      setMessages(prev => [...prev, {
+        sender: 'SYSTEM',
+        text: `Joining session \"${normalized}\". Enter your name to begin.`,
+        type: 'system'
+      }]);
+    }
+  } catch (e) {
+    // no-op for SSR safety
+  }
+}, []);
   // Generate room ID for friend mode
   const generateRoomId = useCallback(() => {
     return Math.random().toString(36).substring(2, 8).toUpperCase()
@@ -194,6 +215,9 @@ useEffect(() => {
 
     for (let i = 0; i < letters.length; i++) {
       const letter = letters[i]
+      
+      // Set current letter for display in mystic ring
+      setCurrentLetter(letter)
       
       // Update current spelling display
       setCurrentSpelling(currentWord + letter)
@@ -278,16 +302,26 @@ useEffect(() => {
       }, 1000)
       
     } else if (mode === 'friend') {
-      // For friend mode, set up usernames and room
-      const newRoomId = generateRoomId()
-      setRoomId(newRoomId)
+      // If a room code exists in URL, use it; else generate one
+      let selectedRoom = ''
+      try {
+        const params = new URLSearchParams(window.location.search)
+        const urlRoom = params.get('room')
+        if (urlRoom) {
+          selectedRoom = urlRoom.toUpperCase()
+        }
+      } catch {}
+
+      const finalRoomId = selectedRoom || generateRoomId()
+      setRoomId(finalRoomId)
       setShowFriendInvite(true)
       
       setMessages(prev => [...prev,
-        { sender: 'SYSTEM', text: 'Friend mode activated. Setting up your session...', type: 'system' }
+        { sender: 'SYSTEM', text: selectedRoom ? `Friend mode activated. Joining session "${finalRoomId}"...` : 'Friend mode activated. Setting up your session...', type: 'system' }
       ])
     }
   }, [initiateSpiritConnection, useAIMode, generateAIResponse, spellResponse, generateRoomId])
+
 
   // Handle board interactions
   const handleBoardInteraction = useCallback((interaction: { type: 'letter' | 'yesno' | 'goodbye'; value: string }) => {
@@ -320,7 +354,7 @@ useEffect(() => {
     }
 
     // Generate spirit response for anonymous mode
-    if (gameMode === 'anonymous' && activeSpirit && interaction.type !== 'goodbye') {
+    if (gameMode === 'anonymous' && activeSpirit) {
       setTimeout(async () => {
         let response: string
         
@@ -337,10 +371,6 @@ useEffect(() => {
         }
         setMessages(prev => [...prev, spiritMessage])
 
-        // Send spirit response in real-time (friend mode)
-        if (gameMode === 'friend') {
-          sendSpiritResponse(response, activeSpirit.name)
-        }
 
         // Spell out the response in real-time
         await spellResponse(response)
@@ -371,20 +401,16 @@ useEffect(() => {
         response = await sendMessageToSpirit(text)
       }
       
+      // First spell out the response in real-time through the mystic ring
+      await spellResponse(response)
+      
+      // Only after animation completes, add the message to chat
       const spiritMessage: Message = { 
         sender: activeSpirit.name, 
         text: response, 
         type: 'spirit' 
       }
       setMessages(prev => [...prev, spiritMessage])
-
-      // Send spirit response in real-time (friend mode)
-      if (gameMode === 'friend') {
-        sendSpiritResponse(response, activeSpirit.name)
-      }
-
-      // Spell out the response in real-time
-      await spellResponse(response)
     }
   }, [gameMode, activeSpirit, useAIMode, generateAIResponse, sendMessageToSpirit, spellResponse, isSpelling, sendMessage, sendSpiritResponse])
 
@@ -463,13 +489,14 @@ useEffect(() => {
         <div style={{ flex: 3, display: 'flex', flexDirection: 'column', gap: '20px' }}>
           {/* Ouija Board */}
           <OuijaBoard 
-            gameMode={gameMode} 
-            onInteraction={handleBoardInteraction}
-            planchettePosition={planchettePosition}
-            messages={messages}
-            isSpelling={isSpelling}
-            currentSpelling={currentSpelling}
-          />
+        gameMode={gameMode}
+        onInteraction={handleBoardInteraction}
+        planchettePosition={planchettePosition}
+        messages={messages}
+        isSpelling={isSpelling}
+        currentSpelling={currentSpelling}
+        currentLetter={currentLetter}
+      />
           
           {/* Real-time Spelling Display - Above Ad */}
           {isSpelling && currentSpelling && (
