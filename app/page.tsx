@@ -28,6 +28,8 @@ export default function Home() {
   const [friendUsername, setFriendUsername] = useState<string>('')
   const [showFriendInvite, setShowFriendInvite] = useState(false)
   const [roomId, setRoomId] = useState<string>('')
+  const [onlineUsers, setOnlineUsers] = useState<number>(0)
+  const [showAnonymousChat, setShowAnonymousChat] = useState<boolean>(false)
 
   // Refs
   const spellingQueueRef = useRef<string[]>([])
@@ -52,10 +54,12 @@ export default function Home() {
     isConnected,
     sendMessage,
     sendBoardInteraction,
-    sendSpiritResponse
+    sendSpiritResponse,
+    onlineUserCount
   } = useRealTimeChat({
     roomId: gameMode === 'friend' ? roomId : undefined,
     username,
+    isAnonymous: gameMode === 'anonymous' && showAnonymousChat,
     onNewMessage: useCallback((message: Message) => {
       setMessages(prev => [...prev, message])
     }, []),
@@ -83,6 +87,9 @@ export default function Home() {
         text: data.message,
         type: 'system'
       }])
+    }, []),
+    onUserCountUpdate: useCallback((count: number) => {
+      setOnlineUsers(count);
     }, [])
   })
 

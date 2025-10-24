@@ -28,12 +28,15 @@ if (typeof window !== 'undefined') {
 export function useRealTimeChat({
   roomId,
   username,
+  isAnonymous = false,
   onNewMessage,
   onBoardInteraction,
   onUserJoined,
-  onUserLeft
+  onUserLeft,
+  onUserCountUpdate
 }: any) {
   const [isConnected, setIsConnected] = useState(false);
+  const [onlineUserCount, setOnlineUserCount] = useState(0);
   const channelRef = useRef<any>(null);
 
   // Simple fallback mode if Pusher isn't available
@@ -110,7 +113,16 @@ export function useRealTimeChat({
       return;
     }
 
-    if (!roomId || !pusherClient) return;
+    if (!pusherClient) return;
+
+    // Listen for global user count updates
+    pusherClient.subscribe('global');
+    pusherClient.bind('user-count-update', (data: { count: number }) => {
+      setOnlineUserCount(data.count);
+      onUserCountUpdate?.(data.count);
+    });
+
+    if (!roomId) return;
 
     const channelName = `room-${roomId}`;
     
@@ -120,6 +132,17 @@ export function useRealTimeChat({
 
       channel.bind('pusher:subscription_succeeded', () => {
         setIsConnected(true);
+        
+        // Join room with anonymous flag if needed
+        fetch('/api/pusher/join', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            roomId,
+            username,
+            isAnonymous
+          })
+        }).catch(err => console.error('Failed to join room:', err));
       });
 
       channel.bind('pusher:subscription_error', () => {
@@ -170,6 +193,7 @@ export function useRealTimeChat({
     sendMessage,
     sendBoardInteraction,
     sendSpiritResponse,
-    isFallbackMode
+    isFallbackMode,
+    onlineUserCount
   };
 }

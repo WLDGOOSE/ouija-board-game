@@ -3,7 +3,8 @@ import { Server as SocketIOServer } from 'socket.io';
 class WebSocketServer {
   private io: SocketIOServer | null = null;
   private rooms: Map<string, Set<string>> = new Map(); // roomId -> Set of socketIds
-  private users: Map<string, { username: string; roomId: string }> = new Map(); // socketId -> user info
+  private users: Map<string, { username: string; roomId: string; isAnonymous?: boolean }> = new Map(); // socketId -> user info
+  private totalOnlineUsers: number = 0; // Track total online users
 
   initialize(server: any) {
     this.io = new SocketIOServer(server, {
@@ -17,10 +18,14 @@ class WebSocketServer {
 
     this.io.on('connection', (socket) => {
       console.log('User connected:', socket.id);
+      this.totalOnlineUsers++;
+      
+      // Broadcast updated user count to all clients
+      this.io!.emit('user-count-update', { count: this.totalOnlineUsers });
 
       // Join a room (friend mode)
-      socket.on('join-room', (data: { roomId: string; username: string }) => {
-        const { roomId, username } = data;
+      socket.on('join-room', (data: { roomId: string; username: string; isAnonymous?: boolean }) => {
+        const { roomId, username, isAnonymous = false } = data;
         
         // Leave previous room if any
         const previousRoom = this.users.get(socket.id)?.roomId;
@@ -31,20 +36,22 @@ class WebSocketServer {
 
         // Join new room
         socket.join(roomId);
-        this.users.set(socket.id, { username, roomId });
+        this.users.set(socket.id, { username, roomId, isAnonymous });
         
         if (!this.rooms.has(roomId)) {
           this.rooms.set(roomId, new Set());
         }
         this.rooms.get(roomId)!.add(socket.id);
 
-        // Notify others in the room
-        socket.to(roomId).emit('user-joined', {
-          username,
-          message: `${username} has joined the session`
-        });
+        // Notify others in the room (unless anonymous)
+        if (!isAnonymous) {
+          socket.to(roomId).emit('user-joined', {
+            username,
+            message: `${username} has joined the session`
+          });
+        }
 
-        console.log(`User ${username} joined room ${roomId}`);
+        console.log(`User ${username} joined room ${roomId} ${isAnonymous ? '(anonymous)' : ''}`);
       });
 
       // Handle board interactions
@@ -92,14 +99,22 @@ class WebSocketServer {
       socket.on('disconnect', () => {
         const user = this.users.get(socket.id);
         if (user) {
-          socket.to(user.roomId).emit('user-left', {
-            username: user.username,
-            message: `${user.username} has left the session`
-          });
+          // Only notify if not anonymous
+          if (!user.isAnonymous) {
+            socket.to(user.roomId).emit('user-left', {
+              username: user.username,
+              message: `${user.username} has left the session`
+            });
+          }
           
           this.rooms.get(user.roomId)?.delete(socket.id);
           this.users.delete(socket.id);
         }
+        
+        // Update user count
+        this.totalOnlineUsers = Math.max(0, this.totalOnlineUsers - 1);
+        this.io!.emit('user-count-update', { count: this.totalOnlineUsers });
+        
         console.log('User disconnected:', socket.id);
       });
     });
@@ -110,6 +125,11 @@ class WebSocketServer {
       throw new Error('Socket.io not initialized');
     }
     return this.io;
+  }
+  
+  // Add method to get current online user count
+  getUserCount() {
+    return this.totalOnlineUsers;
   }
 }
 
