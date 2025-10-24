@@ -10,7 +10,7 @@ export function useAI() {
       // Call server-side AI endpoint for real responses
       const res = await fetch('/api/ai', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
         body: JSON.stringify({ prompt })
       })
 
@@ -19,6 +19,13 @@ export function useAI() {
         if (data?.text && typeof data.text === 'string') {
           return data.text
         }
+      } else {
+        try {
+          const err = await res.json()
+          if (err?.error) {
+            console.error('AI endpoint error:', err)
+          }
+        } catch {}
       }
 
       // Fallback: simulated response if server fails

@@ -369,8 +369,8 @@ useEffect(() => {
       sendBoardInteraction(interaction)
     }
 
-    // Generate spirit response for anonymous mode
-    if (gameMode === 'anonymous' && activeSpirit) {
+    // Generate spirit response for anonymous mode (disabled when anonymous chat is active)
+    if (gameMode === 'anonymous' && activeSpirit && !showAnonymousChat) {
       setTimeout(async () => {
         let response: string
         
@@ -392,7 +392,7 @@ useEffect(() => {
         await spellResponse(response)
       }, 1000)
     }
-  }, [gameMode, activeSpirit, useAIMode, generateAIResponse, sendMessageToSpirit, movePlanchetteToLetter, isSpelling, spellResponse, handleGoodbye, username, sendBoardInteraction, sendSpiritResponse])
+  }, [gameMode, activeSpirit, useAIMode, generateAIResponse, sendMessageToSpirit, movePlanchetteToLetter, isSpelling, spellResponse, handleGoodbye, username, sendBoardInteraction, sendSpiritResponse, showAnonymousChat])
 
   // Handle chat messages
   const handleChatMessage = useCallback(async (sender: string, text: string, type: Message['type']) => {
@@ -409,7 +409,7 @@ useEffect(() => {
       await anonChat.sendAnonymousMessage(text)
     }
 
-    if (gameMode === 'anonymous' && activeSpirit && type === 'user') {
+    if (gameMode === 'anonymous' && activeSpirit && type === 'user' && !showAnonymousChat) {
       let response: string
       if (useAIMode) {
         response = await generateAIResponse(`As a ${activeSpirit.personality} spirit named ${activeSpirit.name}, respond to this message: "${text}". Keep it mysterious and under 150 characters.`)
@@ -476,9 +476,9 @@ useEffect(() => {
       {/* Connection status indicator */}
       {gameMode === 'friend' && (
         <div style={{
-          position: 'absolute', top: 10, left: 10, padding: '5px 10px',
+          position: 'fixed', top: 10, left: 10, padding: '5px 10px',
           backgroundColor: isConnected ? 'rgba(0, 128, 0, 0.8)' : 'rgba(255, 0, 0, 0.8)',
-          color: 'white', borderRadius: '15px', fontSize: '12px', zIndex: 100,
+          color: 'white', borderRadius: '15px', fontSize: '12px', zIndex: 1000,
           border: '1px solid rgba(255, 255, 255, 0.3)'
         }}>
           {isConnected ? '🟢 Connected' : '🔴 Disconnected'}
@@ -487,16 +487,29 @@ useEffect(() => {
 
       {gameMode === 'anonymous' && (
         <div style={{
-          position: 'absolute', top: 10, left: 10, padding: '8px 12px',
+          position: 'fixed', top: 10, left: 10, padding: '8px 12px',
           backgroundColor: 'rgba(20,20,20,0.8)', color: 'white', borderRadius: '10px',
-          fontSize: '12px', zIndex: 100, border: '1px solid rgba(255,255,255,0.2)',
+          fontSize: '12px', zIndex: 1000, border: '1px solid rgba(255,255,255,0.2)',
           display: 'flex', gap: '10px', alignItems: 'center'
         }}>
           <label style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-            <input type="checkbox" checked={showAnonymousChat} onChange={(e) => setShowAnonymousChat(e.target.checked)} />
+            <input type="checkbox" checked={showAnonymousChat} onChange={(e) => {
+              const enabled = e.target.checked;
+              setShowAnonymousChat(enabled);
+              if (enabled && gameMode === 'anonymous') {
+                setUseAIMode(false);
+                setMessages(prev => [...prev, { sender: 'SYSTEM', text: 'Anonymous chat enabled. Waiting for a partner...', type: 'system' }]);
+                anonChat.startAnonymousChat?.();
+              }
+            }} />
             Enable Anonymous Chat
           </label>
           <span>Anon online: {onlineUsers}</span>
+          {showAnonymousChat && (
+            <span style={{ color: '#ccc' }}>
+              {anonChat.isPaired ? `Paired with: ${anonChat.partnerName}` : 'Waiting to be paired...'}
+            </span>
+          )}
           {showAnonymousChat && (
             <button
               style={{ background: '#8b7355', color: 'white', border: 'none', borderRadius: '8px', padding: '6px 10px' }}

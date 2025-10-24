@@ -451,59 +451,58 @@ body {
 
 /* Mobile responsive styles */
 @media (max-width: 768px) {
+  body {
+    overflow: auto;
+    height: auto;
+  }
+
   .container {
     flex-direction: column;
+    height: auto;
     padding: 10px;
-    gap: 15px;
+    gap: 12px;
   }
-  
+
   .board {
-    width: 95%;
-    height: 300px;
+    width: 100%;
+    height: auto;
+    min-height: 360px;
   }
-  
+
   .letters-grid {
+    width: 100%;
+    grid-template-columns: repeat(6, 1fr);
     gap: 8px;
   }
-  
+
   .letter {
-    width: 25px;
-    height: 25px;
-    font-size: 14px;
+    width: 36px;
+    height: 36px;
+    font-size: 18px;
   }
-  
-  .yes, .no {
-    width: 60px;
-    height: 30px;
-    font-size: 14px;
+
+  .yes-no {
+    width: 100%;
+    margin-top: 12px;
   }
-  
+
   .goodbye {
-    width: 100px;
-    height: 30px;
-    font-size: 12px;
+    position: static;
+    margin-top: 12px;
   }
-  
-  /* Adjust mystic ring for mobile */
-  .mystic-ring {
-    transform: scale(0.8);
+
+  .chat-container {
+    width: 100%;
+    min-height: 300px;
   }
-  
-  /* Adjust spelling display for mobile */
-  .spelling-display {
-    font-size: 18px !important;
-    padding: 15px !important;
-    min-height: 60px !important;
-    margin: 10px 0 !important;
+
+  .chat-input-container {
+    flex-wrap: wrap;
+    gap: 8px;
   }
-  
-  .mode-options {
-    flex-direction: column;
-    gap: 15px;
-  }
-  
-  .mode-option {
-    padding: 15px 30px;
+
+  .send-button {
+    padding: 10px 16px;
   }
 }
 

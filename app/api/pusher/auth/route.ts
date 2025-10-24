@@ -13,9 +13,25 @@ function getPusher() {
   });
 }
 
+function parseBody(req: NextRequest): Promise<{ socket_id?: string; channel_name?: string }> {
+  const contentType = req.headers.get('content-type') || '';
+  if (contentType.includes('application/json')) {
+    return req.json();
+  }
+  return req.text().then((text) => {
+    const out: any = {};
+    text.split('&').forEach((pair) => {
+      const [k, v] = pair.split('=');
+      if (!k) return;
+      out[decodeURIComponent(k)] = decodeURIComponent(v || '');
+    });
+    return out;
+  });
+}
+
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
+    const body = await parseBody(req);
     const socket_id = body?.socket_id;
     const channel_name = body?.channel_name;
 
@@ -36,7 +52,6 @@ export async function POST(req: NextRequest) {
     };
 
     const pusher = getPusher();
-    // Authenticate subscription for presence channel
     const authResponse = (pusher as any).authenticate(socket_id, channel_name, presenceData);
 
     return new NextResponse(JSON.stringify(authResponse), {

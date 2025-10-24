@@ -11,8 +11,9 @@ export async function POST(req: NextRequest) {
     }
 
     const apiKey = process.env.OPENAI_API_KEY;
+    const model = process.env.OPENAI_MODEL || 'gpt-4o-mini';
     if (!apiKey) {
-      return NextResponse.json({ error: 'AI not configured' }, { status: 500 });
+      return NextResponse.json({ error: 'Missing OPENAI_API_KEY environment variable' }, { status: 500 });
     }
 
     const system = persona || 'You are a mystical spirit responding through a Ouija board. Keep replies concise, evocative, and in-character. Avoid modern jargon.';
@@ -21,10 +22,11 @@ export async function POST(req: NextRequest) {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model,
         messages: [
           { role: 'system', content: system },
           { role: 'user', content: prompt }
@@ -35,9 +37,10 @@ export async function POST(req: NextRequest) {
     });
 
     if (!response.ok) {
-      const errText = await response.text();
-      console.error('OpenAI error:', errText);
-      return NextResponse.json({ error: 'AI request failed' }, { status: 500 });
+      let errText = '';
+      try { errText = await response.text(); } catch {}
+      console.error('OpenAI error:', errText || response.statusText);
+      return NextResponse.json({ error: 'AI request failed', details: errText || undefined }, { status: 500 });
     }
 
     const data = await response.json();
