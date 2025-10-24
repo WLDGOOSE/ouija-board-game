@@ -24,11 +24,11 @@ export const metadata: Metadata = {
     address: false,
     telephone: false,
   },
-  metadataBase: new URL('https://yourdomain.com'), // Replace with your actual domain
+  metadataBase: new URL('https://ouijia-board.netlify.app/'), // Replace with your actual domain
   openGraph: {
     type: 'website',
     locale: 'en_US',
-    url: 'https://yourdomain.com',
+    url: 'https://ouijia-board.netlify.app/',
     title: 'Spirit Board - Interactive Ouija Experience',
     description: 'Connect with the other side through our interactive spirit board.',
     siteName: 'Spirit Board',

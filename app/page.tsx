@@ -7,6 +7,7 @@ import ModeSelection from './components/ModeSelection'
 import AdPlaceholder from './components/AdPlaceholder'
 import AdminPanel from './components/AdminPanel'
 import FriendInvite from './components/FriendInvite'
+import Footer from './components/Footer'
 import { GameMode, Message, Position } from './components/types'
 import { useSpiritCommunication } from '@/hooks/useSpiritCommunication'
 import { useAI } from '@/hooks/useAI'
@@ -375,7 +376,12 @@ useEffect(() => {
         let response: string
         
         if (useAIMode) {
-          response = await generateAIResponse(`As a ${activeSpirit.personality} spirit named ${activeSpirit.name}, respond to this message: "${message}". Keep it mysterious and under 150 characters.`)
+          const persona = `${activeSpirit.personality} spirit named ${activeSpirit.name}`
+          const convo = [...messages, userMessage]
+            .filter(m => m.type === 'user' || m.type === 'spirit')
+            .slice(-10)
+            .map(m => ({ role: m.type === 'spirit' ? 'assistant' as const : 'user' as const, content: m.text }))
+          response = await generateAIResponse(message, { persona, history: convo })
         } else {
           response = await sendMessageToSpirit(message)
         }
@@ -392,7 +398,7 @@ useEffect(() => {
         await spellResponse(response)
       }, 1000)
     }
-  }, [gameMode, activeSpirit, useAIMode, generateAIResponse, sendMessageToSpirit, movePlanchetteToLetter, isSpelling, spellResponse, handleGoodbye, username, sendBoardInteraction, sendSpiritResponse, showAnonymousChat])
+  }, [gameMode, activeSpirit, useAIMode, generateAIResponse, sendMessageToSpirit, movePlanchetteToLetter, isSpelling, spellResponse, handleGoodbye, username, sendBoardInteraction, sendSpiritResponse, showAnonymousChat, messages])
 
   // Handle chat messages
   const handleChatMessage = useCallback(async (sender: string, text: string, type: Message['type']) => {
@@ -412,7 +418,12 @@ useEffect(() => {
     if (gameMode === 'anonymous' && activeSpirit && type === 'user' && !showAnonymousChat) {
       let response: string
       if (useAIMode) {
-        response = await generateAIResponse(`As a ${activeSpirit.personality} spirit named ${activeSpirit.name}, respond to this message: "${text}". Keep it mysterious and under 150 characters.`)
+        const persona = `${activeSpirit.personality} spirit named ${activeSpirit.name}`
+        const convo = [...messages, newMessage]
+          .filter(m => m.type === 'user' || m.type === 'spirit')
+          .slice(-10)
+          .map(m => ({ role: m.type === 'spirit' ? 'assistant' as const : 'user' as const, content: m.text }))
+        response = await generateAIResponse(text, { persona, history: convo })
       } else {
         response = await sendMessageToSpirit(text)
       }
@@ -420,7 +431,7 @@ useEffect(() => {
       const spiritMessage: Message = { sender: activeSpirit.name, text: response, type: 'spirit' }
       setMessages(prev => [...prev, spiritMessage])
     }
-  }, [gameMode, activeSpirit, useAIMode, generateAIResponse, sendMessageToSpirit, spellResponse, isSpelling, sendMessage, sendSpiritResponse, showAnonymousChat, anonChat])
+  }, [gameMode, activeSpirit, useAIMode, generateAIResponse, sendMessageToSpirit, spellResponse, isSpelling, sendMessage, sendSpiritResponse, showAnonymousChat, anonChat, messages])
 
   // Handle admin settings
   const handleAdminSettings = useCallback((settings: { useAI: boolean }) => {

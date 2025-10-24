@@ -3,7 +3,13 @@ import { useState, useCallback } from 'react'
 export function useAI() {
   const [isAILoading, setIsAILoading] = useState(false)
 
-  const generateAIResponse = useCallback(async (prompt: string): Promise<string> => {
+  const generateAIResponse = useCallback(async (
+    prompt: string,
+    options?: {
+      persona?: string,
+      history?: { role: 'user' | 'assistant'; content: string }[]
+    }
+  ): Promise<string> => {
     setIsAILoading(true)
     
     try {
@@ -11,7 +17,7 @@ export function useAI() {
       const res = await fetch('/api/ai', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-        body: JSON.stringify({ prompt })
+        body: JSON.stringify({ prompt, persona: options?.persona, history: options?.history })
       })
 
       if (res.ok) {
@@ -42,7 +48,9 @@ export function useAI() {
         "Some mysteries are meant to remain mysteries.",
         "The path is unclear, but your intuition will guide you."
       ]
-      return defaultResponses[Math.floor(Math.random() * defaultResponses.length)]
+      const base = defaultResponses[Math.floor(Math.random() * defaultResponses.length)]
+      // Encourage interaction even on fallback
+      return `${base} What would you ask next?`
       
     } catch (error) {
       console.error('AI generation error:', error)

@@ -1,4 +1,5 @@
 import { ModeSelectionProps } from './types'
+import Link from 'next/link'
 
 export default function ModeSelection({ onModeSelect }: ModeSelectionProps) {
   return (
@@ -20,6 +21,15 @@ export default function ModeSelection({ onModeSelect }: ModeSelectionProps) {
           <p>Connect with a friend</p>
         </div>
       </div>
+      <div className="mt-28 text-center">
+  <Link
+    href="/about"
+    className="text-white hover:text-gray-200 underline transition-colors duration-200"
+  >
+    About this Spirit Board
+  </Link>
+</div>
+
     </div>
   )
 }

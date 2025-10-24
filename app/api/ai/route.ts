@@ -4,7 +4,7 @@ export const runtime = 'nodejs';
 
 export async function POST(req: NextRequest) {
   try {
-    const { prompt, persona } = await req.json();
+    const { prompt, persona, history } = await req.json();
 
     if (!prompt || typeof prompt !== 'string') {
       return NextResponse.json({ error: 'Invalid prompt' }, { status: 400 });
@@ -16,7 +16,20 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing OPENAI_API_KEY environment variable' }, { status: 500 });
     }
 
-    const system = persona || 'You are a mystical spirit responding through a Ouija board. Keep replies concise, evocative, and in-character. Avoid modern jargon.';
+    const baseSystem = 'You are a mystical spirit speaking through a Ouija board. Reply in short, evocative phrases, stay in-character, avoid modern jargon. End with a brief, intriguing follow-up question.';
+    const system = persona ? `${baseSystem} Persona: ${persona}` : baseSystem;
+
+    const historyMessages = Array.isArray(history)
+      ? history
+          .filter((m: any) => m && typeof m.content === 'string' && (m.role === 'user' || m.role === 'assistant'))
+          .map((m: any) => ({ role: m.role, content: m.content }))
+      : [];
+
+    const messages = [
+      { role: 'system', content: system },
+      ...historyMessages,
+      { role: 'user', content: prompt }
+    ];
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -27,12 +40,9 @@ export async function POST(req: NextRequest) {
       },
       body: JSON.stringify({
         model,
-        messages: [
-          { role: 'system', content: system },
-          { role: 'user', content: prompt }
-        ],
-        temperature: 0.7,
-        max_tokens: 180
+        messages,
+        temperature: 0.9,
+        max_tokens: 200
       })
     });
 
