@@ -651,6 +651,9 @@ useEffect(() => {
       }}>
         Ctrl+Shift+A for Admin
       </div>
+      
+      {/* Footer with links */}
+      {!gameMode && <Footer />}
     </main>
   )
 }

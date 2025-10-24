@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { Cinzel } from 'next/font/google';
 import { Analytics } from './components/Analytics';
+import BackgroundAudio from './components/BackgroundAudio';
 import './globals.css';
 
 const cinzel = Cinzel({ 
@@ -86,6 +87,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
       </head>
       <body className={cinzel.className}>
         {children}
+        <BackgroundAudio />
       </body>
     </html>
   );
