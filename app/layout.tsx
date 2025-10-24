@@ -1,4 +1,5 @@
 import { Cinzel } from 'next/font/google'
+import { RouteAnalytics } from './components/Analytics';
 import './globals.css'
 
 const cinzel = Cinzel({ 
@@ -18,7 +19,8 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={cinzel.className}>{children}</body>
+      <body className={cinzel.className}>
+  <RouteAnalytics />{children}</body>
     </html>
   )
 }
