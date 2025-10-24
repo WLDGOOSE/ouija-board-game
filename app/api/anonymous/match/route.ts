@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Pusher from 'pusher';
+import { isAllowedOrigin, sanitizeIdentifier } from '@/lib/security';
+import { rateLimit } from '@/lib/rateLimit';
 
 export const runtime = 'nodejs';
 
@@ -19,26 +21,35 @@ let waitingUser: WaitingUser | null = null;
 
 export async function POST(req: NextRequest) {
   try {
+    // Enforce origin and rate limit
+    if (!isAllowedOrigin(req)) {
+      return NextResponse.json({ error: 'Forbidden origin' }, { status: 403 });
+    }
+    const limited = rateLimit(req, 30, 30_000);
+    if (limited) return limited;
+
     const body = await req.json();
     const username: string | undefined = body?.username;
     let anonId: string | undefined = body?.anonId;
 
-    if (!username || typeof username !== 'string') {
+    const cleanUsername = username ? sanitizeIdentifier(username, { maxLen: 24 }) : '';
+    const cleanAnonId = anonId ? sanitizeIdentifier(anonId, { maxLen: 16 }) : '';
+
+    if (!cleanUsername) {
       return NextResponse.json({ error: 'Missing username' }, { status: 400 });
     }
-    if (!anonId || typeof anonId !== 'string') {
-      // Generate a fallback anonId if client didn't provide one
-      anonId = Math.random().toString(36).slice(2, 10);
-    }
+
+    // Generate a fallback anonId if client didn't provide one
+    const finalAnonId = cleanAnonId || Math.random().toString(36).slice(2, 10);
 
     // If no one is waiting, set current user in queue
     if (!waitingUser) {
-      waitingUser = { username, anonId };
+      waitingUser = { username: cleanUsername, anonId: finalAnonId };
       return NextResponse.json({ status: 'waiting' });
     }
 
     // Prevent pairing with self (same anonId)
-    if (waitingUser.anonId === anonId) {
+    if (waitingUser.anonId === finalAnonId) {
       return NextResponse.json({ status: 'waiting' });
     }
 
@@ -48,12 +59,12 @@ export async function POST(req: NextRequest) {
     const matchId = Math.random().toString(36).slice(2, 10);
     waitingUser = null;
 
-    // Notify listeners on a shared channel that a match occurred
+    // Notify listeners on the allowed channel that a match occurred
     const pusher = getPusher();
     await pusher.trigger('anonymous-matches', 'matched', {
       matchId,
-      users: [username, partner],
-      userIds: [anonId, partnerId]
+      users: [cleanUsername, partner],
+      userIds: [finalAnonId, partnerId]
     });
 
     return NextResponse.json({ status: 'matched', matchId, partner });

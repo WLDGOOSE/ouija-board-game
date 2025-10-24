@@ -12,15 +12,18 @@
     "@types/pusher-js": "^5.1.0",
     "firebase": "^12.4.0",
     "next": "16.0.0",
+    "next-pwa": "^5.6.0",
     "pusher": "^5.2.0",
     "pusher-js": "^8.4.0",
     "react": "19.2.0",
     "react-dom": "19.2.0",
+    "sharp": "^0.34.4",
     "socket.io": "^4.8.1"
   },
   "devDependencies": {
     "@netlify/plugin-nextjs": "^5",
     "@tailwindcss/postcss": "^4",
+    "@types/minimatch": "^6.0.0",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Pusher from 'pusher';
+import { isAllowedOrigin, sanitizeIdentifier } from '@/lib/security';
+import { rateLimit } from '@/lib/rateLimit';
 
 export const runtime = 'nodejs';
 
@@ -20,11 +22,24 @@ function getPusher() {
 
 export async function POST(req: NextRequest) {
   try {
+    // Enforce origin and rate limit
+    if (!isAllowedOrigin(req)) {
+      return NextResponse.json(
+        { success: false, error: 'Forbidden origin' },
+        { status: 403 }
+      );
+    }
+    const limited = rateLimit(req, 60, 60_000);
+    if (limited) return limited;
+
     const body = await req.json();
     const { roomId, username, isAnonymous = false } = body;
 
-    // Basic validation
-    if (!roomId || !username) {
+    // Sanitize inputs
+    const cleanRoomId = sanitizeIdentifier(String(roomId || ''), { maxLen: 24 });
+    const cleanUsername = sanitizeIdentifier(String(username || ''), { maxLen: 24 });
+
+    if (!cleanRoomId || !cleanUsername) {
       return NextResponse.json(
         { success: false, error: 'Missing roomId or username' },
         { status: 400 }
@@ -32,13 +47,13 @@ export async function POST(req: NextRequest) {
     }
 
     const pusher = getPusher();
-    const channelName = `room-${roomId}`;
+    const channelName = `room-${cleanRoomId}`;
     
     // Only emit user-joined event if not anonymous
     if (!isAnonymous) {
       await pusher.trigger(channelName, 'user-joined', {
-        username,
-        message: `${username} has joined the session`
+        username: cleanUsername,
+        message: `${cleanUsername} has joined the session`
       });
     }
 

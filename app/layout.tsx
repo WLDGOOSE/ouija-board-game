@@ -25,6 +25,19 @@ export const metadata: Metadata = {
     address: false,
     telephone: false,
   },
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'Ouija Spirit Board',
+  },
+  applicationName: 'Ouija Spirit Board',
+  themeColor: '#B45309',
+  viewport: {
+    width: 'device-width',
+    initialScale: 1,
+    maximumScale: 1,
+  },
   metadataBase: new URL('https://ouijia-board.netlify.app/'), // Replace with your actual domain
   openGraph: {
     type: 'website',
@@ -76,6 +89,8 @@ export default function RootLayout({ children }: RootLayoutProps) {
     <html lang="en" className={cinzel.variable}>
       <head>
         <Analytics />
+        {/* Google Adsense */}
+        <meta name="google-adsense-account" content="ca-pub-8618260259664925"></meta>
         {/* Preload critical resources */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />

@@ -1,12 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { isAllowedOrigin } from '@/lib/security';
+import { rateLimit } from '@/lib/rateLimit';
 
 export const runtime = 'nodejs';
 
 export async function POST(req: NextRequest) {
   try {
+    // Enforce origin and rate limit
+    if (!isAllowedOrigin(req)) {
+      return NextResponse.json({ error: 'Forbidden origin' }, { status: 403 });
+    }
+    const limited = rateLimit(req, 30, 60_000);
+    if (limited) return limited;
+
     const { prompt, persona, history } = await req.json();
 
-    if (!prompt || typeof prompt !== 'string') {
+    // Basic sanitization and caps
+    const cleanPrompt = String(prompt || '').replace(/[\u0000-\u001F\u007F]/g, '').trim().slice(0, 500);
+    const cleanPersona = String(persona || '').replace(/[\u0000-\u001F\u007F]/g, '').trim().slice(0, 200);
+
+    if (!cleanPrompt) {
       return NextResponse.json({ error: 'Invalid prompt' }, { status: 400 });
     }
 
@@ -17,18 +30,19 @@ export async function POST(req: NextRequest) {
     }
 
     const baseSystem = 'You are a mystical spirit speaking through a Ouija board. Reply in short, evocative phrases, stay in-character, avoid modern jargon. End with a brief, intriguing follow-up question.';
-    const system = persona ? `${baseSystem} Persona: ${persona}` : baseSystem;
+    const system = cleanPersona ? `${baseSystem} Persona: ${cleanPersona}` : baseSystem;
 
     const historyMessages = Array.isArray(history)
       ? history
           .filter((m: any) => m && typeof m.content === 'string' && (m.role === 'user' || m.role === 'assistant'))
-          .map((m: any) => ({ role: m.role, content: m.content }))
+          .slice(-20)
+          .map((m: any) => ({ role: m.role, content: String(m.content).slice(0, 300) }))
       : [];
 
     const messages = [
       { role: 'system', content: system },
       ...historyMessages,
-      { role: 'user', content: prompt }
+      { role: 'user', content: cleanPrompt }
     ];
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {

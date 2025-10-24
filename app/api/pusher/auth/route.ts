@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Pusher from 'pusher';
+import { isAllowedOrigin, sanitizeIdentifier } from '@/lib/security';
+import { rateLimit } from '@/lib/rateLimit';
 
 export const runtime = 'nodejs';
 
@@ -31,20 +33,29 @@ function parseBody(req: NextRequest): Promise<{ socket_id?: string; channel_name
 
 export async function POST(req: NextRequest) {
   try {
+    // Origin and rate limit checks
+    if (!isAllowedOrigin(req)) {
+      return NextResponse.json({ error: 'Forbidden origin' }, { status: 403 });
+    }
+    const limited = rateLimit(req, 60, 60_000);
+    if (limited) return limited;
+
     const body = await parseBody(req);
     const socket_id = body?.socket_id;
-    const channel_name = body?.channel_name;
+    const raw_channel = body?.channel_name || '';
 
-    if (!socket_id || !channel_name) {
+    if (!socket_id || !raw_channel) {
       return NextResponse.json({ error: 'Missing socket_id or channel_name' }, { status: 400 });
     }
 
+    // Strict channel validation: presence-room-<id>
+    const channel_name = sanitizeIdentifier(raw_channel, { maxLen: 64, pattern: /^presence-[a-zA-Z0-9_-]+$/ });
     if (!channel_name.startsWith('presence-')) {
-      return NextResponse.json({ error: 'Invalid channel type' }, { status: 400 });
+      return NextResponse.json({ error: 'Invalid channel' }, { status: 400 });
     }
 
-    const usernameParam = req.nextUrl.searchParams.get('username');
-    const displayName = usernameParam || 'Anonymous';
+    const usernameParam = req.nextUrl.searchParams.get('username') || 'Anonymous';
+    const displayName = sanitizeIdentifier(usernameParam, { maxLen: 24 });
 
     const presenceData = {
       user_id: 'anon-' + Math.random().toString(36).slice(2),
