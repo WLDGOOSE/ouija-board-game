@@ -11,6 +11,7 @@ import { GameMode, Message, Position } from './components/types'
 import { useSpiritCommunication } from '@/hooks/useSpiritCommunication'
 import { useAI } from '@/hooks/useAI'
 import { useRealTimeChat } from '@/hooks/useRealTimeChat'
+import { useAnonymousChat } from '@/hooks/useAnonymousChat'
 
 export default function Home() {
   // State declarations
@@ -91,6 +92,14 @@ export default function Home() {
     onUserCountUpdate: useCallback((count: number) => {
       setOnlineUsers(count);
     }, [])
+  })
+
+  const anonChat = useAnonymousChat({
+    username,
+    onNewMessage: (message) => {
+      setMessages(prev => [...prev, message])
+    },
+    onUserCountUpdate: (count) => setOnlineUsers(count)
   })
 
   // Letter position mapping
@@ -389,37 +398,29 @@ useEffect(() => {
   const handleChatMessage = useCallback(async (sender: string, text: string, type: Message['type']) => {
     if (isSpelling) return
 
-    // Add message locally
     const newMessage: Message = { sender, text, type }
     setMessages(prev => [...prev, newMessage])
 
-    // Send to other users in real-time (friend mode)
     if (gameMode === 'friend' && type === 'user') {
       sendMessage(text, type)
     }
 
-    // Generate spirit response for anonymous mode
+    if (gameMode === 'anonymous' && type === 'user' && showAnonymousChat) {
+      await anonChat.sendAnonymousMessage(text)
+    }
+
     if (gameMode === 'anonymous' && activeSpirit && type === 'user') {
       let response: string
-      
       if (useAIMode) {
         response = await generateAIResponse(`As a ${activeSpirit.personality} spirit named ${activeSpirit.name}, respond to this message: "${text}". Keep it mysterious and under 150 characters.`)
       } else {
         response = await sendMessageToSpirit(text)
       }
-      
-      // First spell out the response in real-time through the mystic ring
       await spellResponse(response)
-      
-      // Only after animation completes, add the message to chat
-      const spiritMessage: Message = { 
-        sender: activeSpirit.name, 
-        text: response, 
-        type: 'spirit' 
-      }
+      const spiritMessage: Message = { sender: activeSpirit.name, text: response, type: 'spirit' }
       setMessages(prev => [...prev, spiritMessage])
     }
-  }, [gameMode, activeSpirit, useAIMode, generateAIResponse, sendMessageToSpirit, spellResponse, isSpelling, sendMessage, sendSpiritResponse])
+  }, [gameMode, activeSpirit, useAIMode, generateAIResponse, sendMessageToSpirit, spellResponse, isSpelling, sendMessage, sendSpiritResponse, showAnonymousChat, anonChat])
 
   // Handle admin settings
   const handleAdminSettings = useCallback((settings: { useAI: boolean }) => {
@@ -475,18 +476,37 @@ useEffect(() => {
       {/* Connection status indicator */}
       {gameMode === 'friend' && (
         <div style={{
-          position: 'absolute',
-          top: 10,
-          left: 10,
-          padding: '5px 10px',
+          position: 'absolute', top: 10, left: 10, padding: '5px 10px',
           backgroundColor: isConnected ? 'rgba(0, 128, 0, 0.8)' : 'rgba(255, 0, 0, 0.8)',
-          color: 'white',
-          borderRadius: '15px',
-          fontSize: '12px',
-          zIndex: 100,
+          color: 'white', borderRadius: '15px', fontSize: '12px', zIndex: 100,
           border: '1px solid rgba(255, 255, 255, 0.3)'
         }}>
           {isConnected ? '🟢 Connected' : '🔴 Disconnected'}
+        </div>
+      )}
+
+      {gameMode === 'anonymous' && (
+        <div style={{
+          position: 'absolute', top: 10, left: 10, padding: '8px 12px',
+          backgroundColor: 'rgba(20,20,20,0.8)', color: 'white', borderRadius: '10px',
+          fontSize: '12px', zIndex: 100, border: '1px solid rgba(255,255,255,0.2)',
+          display: 'flex', gap: '10px', alignItems: 'center'
+        }}>
+          <label style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+            <input type="checkbox" checked={showAnonymousChat} onChange={(e) => setShowAnonymousChat(e.target.checked)} />
+            Enable Anonymous Chat
+          </label>
+          <span>Anon online: {onlineUsers}</span>
+          {showAnonymousChat && (
+            <button
+              style={{ background: '#8b7355', color: 'white', border: 'none', borderRadius: '8px', padding: '6px 10px' }}
+              onClick={async () => {
+                await anonChat.endAnonymousSession()
+                setShowAnonymousChat(false)
+                setMessages(prev => [...prev, { sender: 'SYSTEM', text: 'Anonymous session ended.', type: 'system' }])
+              }}
+            >End Session</button>
+          )}
         </div>
       )}
       
