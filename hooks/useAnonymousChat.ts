@@ -16,9 +16,20 @@ export function useAnonymousChat({ username, onNewMessage, onUserCountUpdate }: 
   const presenceRef = useRef<any>(null);
   const pairChannelRef = useRef<any>(null);
   const matchesChannelRef = useRef<any>(null);
+  const anonIdRef = useRef<string>('');
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
+
+    // Generate a stable anonymous session id
+    if (!anonIdRef.current) {
+      try {
+        const uuid = (crypto as any)?.randomUUID?.();
+        anonIdRef.current = uuid || Math.random().toString(36).slice(2, 10);
+      } catch {
+        anonIdRef.current = Math.random().toString(36).slice(2, 10);
+      }
+    }
 
     try {
       const Pusher = require('pusher-js');
@@ -52,10 +63,21 @@ export function useAnonymousChat({ username, onNewMessage, onUserCountUpdate }: 
       matchesChannelRef.current = matchesChannel;
       matchesChannel.bind('matched', (data: any) => {
         const users: string[] = data?.users || [];
+        const ids: string[] = data?.userIds || [];
         const mid: string = data?.matchId;
-        if (!mid || users.length !== 2) return;
-        if (!users.includes(username)) return;
-        const partner = users.find(u => u !== username) || '';
+        if (!mid) return;
+
+        const myId = anonIdRef.current;
+        const myIndex = ids.length === 2 ? ids.indexOf(myId) : -1;
+        if (myIndex === -1 && ids.length === 2) return;
+
+        let partner = '';
+        if (myIndex !== -1 && users.length === 2) {
+          const partnerIndex = myIndex === 0 ? 1 : 0;
+          partner = users[partnerIndex] || '';
+        } else {
+          partner = users.find(u => u !== username) || '';
+        }
 
         setMatchId(mid);
         setPartnerName(partner);
@@ -116,7 +138,7 @@ export function useAnonymousChat({ username, onNewMessage, onUserCountUpdate }: 
       const res = await fetch('/api/anonymous/match', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username })
+        body: JSON.stringify({ username, anonId: anonIdRef.current })
       });
 
       if (!res.ok) {

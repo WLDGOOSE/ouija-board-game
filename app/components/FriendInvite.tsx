@@ -28,8 +28,10 @@ export default function FriendInvite({
   }
 
   const handleJoinAsFriend = () => {
-    if (joinUsername.trim()) {
-      onFriendJoin(joinUsername.trim())
+    const name = joinUsername.trim()
+    if (name) {
+      onUsernameChange(name)
+      onFriendJoin(name)
     }
   }
 

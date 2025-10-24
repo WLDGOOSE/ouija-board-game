@@ -14,29 +14,37 @@ function getPusher() {
 }
 
 // Simple in-memory matchmaking queue
-type WaitingUser = { username: string };
+type WaitingUser = { username: string; anonId: string };
 let waitingUser: WaitingUser | null = null;
 
 export async function POST(req: NextRequest) {
   try {
-    const { username } = await req.json();
+    const body = await req.json();
+    const username: string | undefined = body?.username;
+    let anonId: string | undefined = body?.anonId;
+
     if (!username || typeof username !== 'string') {
       return NextResponse.json({ error: 'Missing username' }, { status: 400 });
+    }
+    if (!anonId || typeof anonId !== 'string') {
+      // Generate a fallback anonId if client didn't provide one
+      anonId = Math.random().toString(36).slice(2, 10);
     }
 
     // If no one is waiting, set current user in queue
     if (!waitingUser) {
-      waitingUser = { username };
+      waitingUser = { username, anonId };
       return NextResponse.json({ status: 'waiting' });
     }
 
-    // If the same user is already waiting, just confirm waiting
-    if (waitingUser.username === username) {
+    // Prevent pairing with self (same anonId)
+    if (waitingUser.anonId === anonId) {
       return NextResponse.json({ status: 'waiting' });
     }
 
     // Pair users
     const partner = waitingUser.username;
+    const partnerId = waitingUser.anonId;
     const matchId = Math.random().toString(36).slice(2, 10);
     waitingUser = null;
 
@@ -44,7 +52,8 @@ export async function POST(req: NextRequest) {
     const pusher = getPusher();
     await pusher.trigger('anonymous-matches', 'matched', {
       matchId,
-      users: [username, partner]
+      users: [username, partner],
+      userIds: [anonId, partnerId]
     });
 
     return NextResponse.json({ status: 'matched', matchId, partner });
