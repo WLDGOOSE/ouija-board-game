@@ -91,6 +91,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
         <Analytics />
         {/* Google Adsense */}
         <meta name="google-adsense-account" content="ca-pub-8618260259664925"></meta>
+        <meta name="google-site-verification" content="t2sca7vmwmtKih3k4kjHT7dArt4DlOXEiniZ4rmL3ss" />
         {/* Preload critical resources */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
