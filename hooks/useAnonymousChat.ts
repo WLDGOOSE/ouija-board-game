@@ -21,6 +21,10 @@ export function useAnonymousChat({ username, onNewMessage, onUserCountUpdate }: 
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
+    // Reuse a singleton Pusher instance in dev to avoid duplicate auth calls
+    const globalKey = '__anonPusher__';
+    const presenceKey = '__anonPresence__';
+
     // Generate a stable anonymous session id
     if (!anonIdRef.current) {
       try {
@@ -36,17 +40,28 @@ export function useAnonymousChat({ username, onNewMessage, onUserCountUpdate }: 
       const key = process.env.NEXT_PUBLIC_PUSHER_KEY!;
       const cluster = process.env.NEXT_PUBLIC_PUSHER_CLUSTER!;
 
-      pusherRef.current = new Pusher(key, {
-        cluster,
-        forceTLS: true,
-        enabledTransports: ['ws', 'wss'],
-        disabledTransports: ['sockjs', 'xhr_streaming', 'xhr_polling'],
-        authEndpoint: `/api/pusher/auth?username=${encodeURIComponent(username || 'Anonymous')}`
-      });
+      // Initialize or reuse
+      const existing = (window as any)[globalKey];
+      if (existing) {
+        pusherRef.current = existing;
+      } else {
+        pusherRef.current = new Pusher(key, {
+          cluster,
+          forceTLS: true,
+          enabledTransports: ['ws', 'wss'],
+          disabledTransports: ['sockjs', 'xhr_streaming', 'xhr_polling'],
+          authEndpoint: `/api/pusher/auth?username=${encodeURIComponent(username || 'Anonymous')}`
+        });
+        (window as any)[globalKey] = pusherRef.current;
+      }
 
       // Presence for counting online anonymous users
-      const presence = pusherRef.current.subscribe('presence-anonymous');
+      const existingPresence = (window as any)[presenceKey];
+      const presence = existingPresence || pusherRef.current.subscribe('presence-anonymous');
       presenceRef.current = presence;
+      if (!existingPresence) {
+        (window as any)[presenceKey] = presence;
+      }
 
       const updateCount = () => {
         const count = presence.members?.count || 0;

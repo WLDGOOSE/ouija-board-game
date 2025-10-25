@@ -7,6 +7,7 @@ import ModeSelection from './components/ModeSelection'
 import AdPlaceholder from './components/AdPlaceholder'
 import AdminPanel from './components/AdminPanel'
 import FriendInvite from './components/FriendInvite'
+import ChatHistoryPanel from './components/ChatHistoryPanel'
 import Footer from './components/Footer'
 import { GameMode, Message, Position } from './components/types'
 import { useSpiritCommunication } from '@/hooks/useSpiritCommunication'
@@ -32,6 +33,7 @@ export default function Home() {
   const [roomId, setRoomId] = useState<string>('')
   const [onlineUsers, setOnlineUsers] = useState<number>(0)
   const [showAnonymousChat, setShowAnonymousChat] = useState<boolean>(false)
+  const [showChatHistory, setShowChatHistory] = useState<boolean>(false)
 
   // Refs
   const spellingQueueRef = useRef<string[]>([])
@@ -48,7 +50,10 @@ export default function Home() {
 
   const {
     generateAIResponse,
-    isAILoading
+    isAILoading,
+    chatHistory,
+    clearChatHistory,
+    sessionId
   } = useAI()
 
   // Real-time chat hook
@@ -637,6 +642,15 @@ useEffect(() => {
           username={username}
         />
       </div>
+
+      {/* Chat History Panel */}
+      <ChatHistoryPanel
+        chatHistory={chatHistory}
+        sessionId={sessionId}
+        onClearHistory={clearChatHistory}
+        isVisible={showChatHistory}
+        onToggleVisibility={() => setShowChatHistory(!showChatHistory)}
+      />
 
       {/* Hidden Admin Trigger Hint */}
       <div style={{

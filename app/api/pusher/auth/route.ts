@@ -37,7 +37,8 @@ export async function POST(req: NextRequest) {
     if (!isAllowedOrigin(req)) {
       return NextResponse.json({ error: 'Forbidden origin' }, { status: 403 });
     }
-    const limited = rateLimit(req, 60, 60_000);
+    const isDev = process.env.NODE_ENV !== 'production';
+    const limited = rateLimit(req, isDev ? 300 : 60, 60_000);
     if (limited) return limited;
 
     const body = await parseBody(req);
