@@ -549,7 +549,7 @@ useEffect(() => {
         onInteraction={handleBoardInteraction}
         planchettePosition={planchettePosition}
         messages={messages}
-        isSpelling={isSpelling}
+        //isSpelling={isSpelling}
         currentSpelling={currentSpelling}
         currentLetter={currentLetter}
       />
